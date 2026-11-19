@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/favorites_provider.dart';
 import '../widgets/movie_grid.dart';
+import '../widgets/state_views.dart';
 import '../widgets/theme_toggle_button.dart';
 
 /// Shows locally saved favorites and lets the user remove them.
@@ -19,53 +20,36 @@ class FavoritesScreen extends StatelessWidget {
         title: const Text('Favorites'),
         actions: const [ThemeToggleButton(), SizedBox(width: 4)],
       ),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : provider.favorites.isEmpty
-              ? const _EmptyFavorites()
-              : MovieGrid(
-                  movies: provider.favorites,
-                  onMovieTap: (movie) =>
-                      context.push('/movie/${movie.id}', extra: movie),
-                  isFavorite: (_) => true,
-                  onFavoriteTap: (movie) =>
-                      context.read<FavoritesProvider>().remove(movie.id),
-                ),
+      body: _buildBody(context, provider),
     );
   }
-}
 
-class _EmptyFavorites extends StatelessWidget {
-  const _EmptyFavorites();
+  Widget _buildBody(BuildContext context, FavoritesProvider provider) {
+    if (provider.isLoading) {
+      return const LoadingView(message: 'Loading favorites...');
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    if (provider.errorMessage != null && provider.isEmpty) {
+      return ErrorView(
+        message: provider.errorMessage!,
+        onRetry: provider.retry,
+      );
+    }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.favorite_border,
-              size: 56,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text('No favorites yet', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Tap the heart on a movie to save it here.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+    if (provider.isEmpty) {
+      return const EmptyView(
+        icon: Icons.favorite_border,
+        title: 'No favorites yet',
+        message: 'Tap the heart on a movie to save it here.',
+      );
+    }
+
+    return MovieGrid(
+      movies: provider.favorites,
+      onMovieTap: (movie) => context.push('/movie/${movie.id}', extra: movie),
+      isFavorite: (_) => true,
+      onFavoriteTap: (movie) =>
+          context.read<FavoritesProvider>().remove(movie.id),
     );
   }
 }

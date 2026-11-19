@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/movie.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/movie_detail_provider.dart';
+import '../widgets/state_views.dart';
 import '../widgets/theme_toggle_button.dart';
 
 /// Detail screen: backdrop, poster, title, rating, release date, genres
@@ -50,7 +51,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final provider = context.watch<MovieDetailProvider>();
     final movie = provider.movie;
     final isFavorite =
-        movie != null && context.watch<FavoritesProvider>().isFavorite(movie.id);
+        movie != null &&
+        context.watch<FavoritesProvider>().isFavorite(movie.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,11 +60,14 @@ class _DetailScreenState extends State<DetailScreen> {
         actions: [
           if (movie != null)
             IconButton(
-              tooltip:
-                  isFavorite ? 'Remove from favorites' : 'Add to favorites',
+              tooltip: isFavorite
+                  ? 'Remove from favorites'
+                  : 'Add to favorites',
               icon: Icon(
                 isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Theme.of(context).colorScheme.primary : null,
+                color: isFavorite
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
               ),
               onPressed: () => _toggleFavorite(movie),
             ),
@@ -71,52 +76,13 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       ),
       body: movie == null
-          ? _Placeholder(provider: provider)
+          ? (provider.hasLoaded && !provider.isLoading
+                ? ErrorView(
+                    message: provider.errorMessage ?? 'Movie not found.',
+                    onRetry: provider.retry,
+                  )
+                : const LoadingView(message: 'Loading movie details...'))
           : _DetailContent(movie: movie),
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.provider});
-
-  final MovieDetailProvider provider;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Before the first request completes, keep showing the spinner.
-    if (!provider.hasLoaded || provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.cloud_off_outlined,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.errorMessage ?? 'Movie not found.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: provider.retry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -145,9 +111,8 @@ class _DetailContent extends StatelessWidget {
                 placeholder: (_, _) => ColoredBox(
                   color: theme.colorScheme.surfaceContainerHighest,
                 ),
-                errorWidget: (_, _, _) => _ImageFallback(
-                  icon: Icons.image_not_supported_outlined,
-                ),
+                errorWidget: (_, _, _) =>
+                    _ImageFallback(icon: Icons.image_not_supported_outlined),
               ),
             ),
           ),
@@ -240,7 +205,8 @@ class _Poster extends StatelessWidget {
       placeholder: (_, _) => ColoredBox(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      errorWidget: (_, _, _) => const _ImageFallback(icon: Icons.movie_outlined),
+      errorWidget: (_, _, _) =>
+          const _ImageFallback(icon: Icons.movie_outlined),
     );
   }
 }
@@ -280,9 +246,7 @@ class _InfoRow extends StatelessWidget {
           color: iconColor ?? theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 6),
-        Flexible(
-          child: Text(text, style: theme.textTheme.bodyMedium),
-        ),
+        Flexible(child: Text(text, style: theme.textTheme.bodyMedium)),
       ],
     );
   }

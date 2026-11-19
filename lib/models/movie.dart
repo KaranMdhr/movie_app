@@ -70,16 +70,16 @@ class Movie {
 
   /// Used to persist favorites locally with shared_preferences.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'overview': overview,
-        'vote_average': voteAverage,
-        'poster_path': posterPath,
-        'backdrop_path': backdropPath,
-        'release_date': releaseDate,
-        'genre_ids': genreIds,
-        'genres': genres,
-      };
+    'id': id,
+    'title': title,
+    'overview': overview,
+    'vote_average': voteAverage,
+    'poster_path': posterPath,
+    'backdrop_path': backdropPath,
+    'release_date': releaseDate,
+    'genre_ids': genreIds,
+    'genres': genres,
+  };
 
   /// Full poster URL, or null so widgets can show a placeholder.
   String? get posterUrl {
@@ -108,8 +108,18 @@ class Movie {
     if (parsed == null) return 'Release date unknown';
 
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[parsed.month - 1]} ${parsed.day}, ${parsed.year}';
   }

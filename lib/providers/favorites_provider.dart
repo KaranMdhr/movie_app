@@ -16,15 +16,17 @@ class FavoritesProvider extends ChangeNotifier {
 
   static const String _prefsKey = 'favorite_movies';
 
-  late final Future<void> _restoreFuture;
+  Future<void>? _restoreFuture;
 
   List<Movie> _favorites = const [];
   bool _isLoading = true;
+  String? _errorMessage;
   bool _disposed = false;
 
   List<Movie> get favorites => List.unmodifiable(_favorites);
   bool get isLoading => _isLoading;
   bool get isEmpty => _favorites.isEmpty;
+  String? get errorMessage => _errorMessage;
 
   bool isFavorite(int movieId) {
     return _favorites.any((movie) => movie.id == movieId);
@@ -52,12 +54,21 @@ class FavoritesProvider extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> _restore() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
+  /// Used by the error state's Retry button on the Favorites screen.
+  Future<void> retry() async {
+    _isLoading = true;
+    _errorMessage = null;
+    _notify();
+    _restoreFuture = _restore();
+    await _restoreFuture;
+  }
 
-    if (raw != null) {
-      try {
+  Future<void> _restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey);
+
+      if (raw != null) {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
           _favorites = decoded
@@ -65,20 +76,32 @@ class FavoritesProvider extends ChangeNotifier {
               .map(Movie.fromJson)
               .toList();
         }
-      } catch (_) {
-        // Corrupted storage should never crash the app.
-        _favorites = const [];
       }
+      _errorMessage = null;
+    } catch (_) {
+      _errorMessage = 'Could not load your favorites.';
+    } finally {
+      _isLoading = false;
+      _notify();
     }
-
-    _isLoading = false;
-    _notify();
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = jsonEncode(_favorites.map((movie) => movie.toJson()).toList());
-    await prefs.setString(_prefsKey, raw);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonEncode(
+        _favorites.map((movie) => movie.toJson()).toList(),
+      );
+      await prefs.setString(_prefsKey, raw);
+
+      if (_errorMessage != null) {
+        _errorMessage = null;
+        _notify();
+      }
+    } catch (_) {
+      _errorMessage = 'Could not save your favorites.';
+      _notify();
+    }
   }
 
   void _notify() {

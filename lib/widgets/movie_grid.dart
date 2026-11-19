@@ -43,8 +43,9 @@ class MovieGrid extends StatelessWidget {
           movie: movie,
           onTap: onMovieTap == null ? null : () => onMovieTap!(movie),
           isFavorite: isFavorite?.call(movie),
-          onFavoriteTap:
-              onFavoriteTap == null ? null : () => onFavoriteTap!(movie),
+          onFavoriteTap: onFavoriteTap == null
+              ? null
+              : () => onFavoriteTap!(movie),
         );
       },
     );

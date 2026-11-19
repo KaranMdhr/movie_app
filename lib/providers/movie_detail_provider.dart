@@ -8,11 +8,8 @@ import '../services/tmdb_service.dart';
 /// Created per detail screen (see the `/movie/:id` route) so each page owns
 /// its own loading + error state.
 class MovieDetailProvider extends ChangeNotifier {
-  MovieDetailProvider(
-    this._service,
-    this.movieId, {
-    Movie? initialMovie,
-  }) : _movie = initialMovie;
+  MovieDetailProvider(this._service, this.movieId, {Movie? initialMovie})
+    : _movie = initialMovie;
 
   final TmdbService _service;
   final int movieId;
