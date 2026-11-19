@@ -18,6 +18,12 @@ class AppConstants {
     defaultValue: apiKeyPlaceholder,
   );
 
+  /// Optional v4 "API Read Access Token". When present it is sent as a
+  /// `Bearer` token instead of the v3 `api_key` query parameter.
+  static const String tmdbAccessToken = String.fromEnvironment(
+    'TMDB_ACCESS_TOKEN',
+  );
+
   /// Root of the TMDB REST API (v3).
   static const String tmdbBaseUrl = 'https://api.themoviedb.org/3';
 

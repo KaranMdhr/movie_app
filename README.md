@@ -50,7 +50,26 @@ flutter pub get
 
 ### 2. Configure the API key
 
-Create a file named `config.json` in the project root (it is git-ignored):
+TMDB accepts either a **v3 API Key** or a **v4 Read Access Token** (Bearer).
+Pick one of the options below.
+
+#### Option A — Web, no flags (recommended here)
+
+Create `web/config.json` (git-ignored):
+
+```json
+{
+  "TMDB_API_KEY": "your_v3_api_key_here"
+}
+```
+
+The app fetches this file at startup, so a plain `flutter run -d chrome` is
+enough. You can use `"TMDB_ACCESS_TOKEN": "your_v4_token"` instead if you have
+a v4 Read Access Token.
+
+#### Option B — Compile-time (all platforms)
+
+Create `config.json` in the project root (git-ignored):
 
 ```json
 {
@@ -70,17 +89,22 @@ Or pass the key directly:
 flutter run -d chrome --dart-define=TMDB_API_KEY=your_v3_api_key_here
 ```
 
-In VS Code, pick the **Movie Discovery (config.json)** launch configuration (`.vscode/launch.json`) and press `F5`.
+In VS Code, pick the **Movie Discovery (config.json)** launch configuration
+(`.vscode/launch.json`) and press `F5`. `.vscode/settings.json` also passes the
+file to normal Flutter runs started from the editor.
 
-> The key is a compile-time define. Restart the app after changing it; hot reload is not enough.
+> Option B values are compile-time: fully restart the app after changing them.
+> Option A is read on startup, so a browser refresh is enough.
 
 ### 3. Run
 
 ```bash
-flutter run -d chrome --dart-define-from-file=config.json
+flutter run -d chrome
 ```
 
-Other devices work too, e.g. `-d windows` or `-d <device-id>`.
+For Option B, add `--dart-define-from-file=config.json` (or use the VS Code
+launch configuration). Other devices work too, e.g. `-d windows` or
+`-d <device-id>`; those builds use compile-time values.
 
 ## Project structure
 
@@ -108,6 +132,7 @@ lib/
     state_views.dart         # LoadingView / ErrorView / EmptyView
     theme_toggle_button.dart
   utils/
+    app_config.dart          # runtime config.json + dart-define fallback
     constants.dart           # API URLs + key injection
     theme.dart               # light/dark ThemeData
 ```
@@ -115,6 +140,8 @@ lib/
 ## Architecture notes
 
 - `TmdbService` is the only place that knows URLs, status codes, and JSON. It throws a UI-safe `ApiException`.
+- On web, `AppConfig` reads `web/config.json` at startup; compile-time
+  `--dart-define` values are the fallback and the only option on other platforms.
 - Providers own screen state; widgets only render and call methods.
 - `SearchProvider` cancels the debounce timer and uses a request id to ignore stale responses.
 - Favorites are stored as JSON snapshots of `Movie`, so the grid renders offline. Toggling waits for the initial restore to avoid overwriting saved data.
@@ -123,7 +150,9 @@ lib/
 
 ## Limitations
 
-- The TMDB key is used client-side and is visible in the built app. For a production app, proxy requests through a backend so the key stays private.
+- The TMDB key is used client-side and is visible in the built app. With
+  Option A it is served publicly at `/config.json`. For a production app,
+  proxy requests through a backend so the key stays private.
 - Favorites store a snapshot of movie data; changes made on TMDB are not synced.
 - No pagination or infinite scroll (not part of the project scope).
 

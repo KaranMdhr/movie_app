@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/movie.dart';
+import '../utils/app_config.dart';
 import '../utils/constants.dart';
 
 /// A user-facing API failure. [message] is safe to show in the UI.
@@ -60,12 +61,15 @@ class TmdbService {
   /// Releases the underlying HTTP connections.
   void dispose() => _client.close();
 
-  /// Builds a TMDB URL and injects the key + language automatically.
+  /// Builds a TMDB URL and injects the v3 key + language when needed.
+  ///
+  /// With a v4 Bearer token the key is sent as a header instead, so no
+  /// `api_key` query parameter is added.
   Uri _uri(String path, [Map<String, Object?>? query]) {
-    final params = <String, String>{
-      'api_key': AppConstants.tmdbApiKey,
-      'language': 'en-US',
-    };
+    final params = <String, String>{'language': 'en-US'};
+    if (AppConfig.accessToken.isEmpty && AppConfig.apiKey.isNotEmpty) {
+      params['api_key'] = AppConfig.apiKey;
+    }
     query?.forEach((key, value) {
       if (value != null) params[key] = value.toString();
     });
@@ -75,17 +79,28 @@ class TmdbService {
 
   /// Performs a GET, validates the response and returns decoded JSON.
   Future<Map<String, dynamic>> _get(Uri uri) async {
-    if (!_hasApiKey) {
+    if (!AppConfig.hasCredentials) {
       throw const ApiException(
-        'TMDB API key is missing. Run the app with '
-        '--dart-define=TMDB_API_KEY=your_key.',
+        'TMDB API key is missing. Add TMDB_API_KEY to web/config.json, '
+        'or run with --dart-define-from-file=config.json.',
       );
     }
 
+    final headers = <String, String>{'accept': 'application/json'};
+    if (AppConfig.accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${AppConfig.accessToken}';
+    }
+
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get(uri, headers: headers).timeout(_timeout);
 
       if (response.statusCode != 200) {
+        if (response.statusCode == 401) {
+          throw const ApiException(
+            'TMDB rejected your credentials. Check that your v3 API key or '
+            'v4 Read Access Token is correct.',
+          );
+        }
         throw ApiException(
           'TMDB request failed (${response.statusCode}). Please try again.',
         );
@@ -121,10 +136,5 @@ class TmdbService {
         .whereType<Map<String, dynamic>>()
         .map(Movie.fromJson)
         .toList();
-  }
-
-  bool get _hasApiKey {
-    final key = AppConstants.tmdbApiKey.trim();
-    return key.isNotEmpty && key != AppConstants.apiKeyPlaceholder;
   }
 }

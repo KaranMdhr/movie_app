@@ -13,6 +13,7 @@ import 'screens/favorites_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'services/tmdb_service.dart';
+import 'utils/app_config.dart';
 import 'utils/theme.dart';
 
 /// App routes.
@@ -45,7 +46,13 @@ final GoRouter _router = GoRouter(
   ],
 );
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // On web this reads web/config.json at runtime, so a plain
+  // `flutter run -d chrome` works without dart-define flags.
+  await AppConfig.load();
+
   runApp(
     MultiProvider(
       providers: [
