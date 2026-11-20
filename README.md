@@ -141,6 +141,14 @@ vercel --prod
 `/config.json` is the function rather than your local file. After changing the
 Vercel variable, redeploy for the new value to take effect.
 
+### Troubleshooting
+
+- `/config.json` returns `{}`: the current deployment does not see
+  `TMDB_API_KEY`. Environment variable changes only apply to **new**
+  deployments, so redeploy after adding or editing one.
+- Root URL returns 404: the Flutter build did not produce `build/web`. Check
+  the Vercel build log for the `flutter build web` step.
+
 ## Project structure
 
 ```text
