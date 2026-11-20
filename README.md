@@ -112,32 +112,43 @@ The key is never committed. On Vercel it comes from an environment variable and
 is served by a small function (`api/config.js`) at `/config.json`, so the static
 Flutter build contains no key.
 
-1. Install the CLI once:
-   ```bash
-   npm i -g vercel
-   ```
-2. In Vercel, open **Project → Settings → Environment Variables** and add
-   `TMDB_API_KEY` (or `TMDB_ACCESS_TOKEN`) for Production and Preview.
-3. From the project root:
-   ```bash
-   flutter build web --release
-   vercel --prod
-   ```
+### GitHub auto-deploy
 
-`build/web/config.json` is ignored by `.vercelignore`, so the deployed
+`vercel.json` runs `scripts/vercel-build.sh`, which installs Flutter stable and
+builds `build/web` on Vercel. The first build takes several minutes.
+
+1. In Vercel, open **Project → Settings → Environment Variables** and add
+   `TMDB_API_KEY` (or `TMDB_ACCESS_TOKEN`) for Production and Preview.
+2. Push to `main` (or click **Redeploy**). Vercel builds and serves the app.
+
+### Local CLI deploy
+
+Useful if you do not want Vercel to build Flutter:
+
+```bash
+npm i -g vercel
+vercel login
+vercel link
+
+vercel env add TMDB_API_KEY production
+vercel env add TMDB_API_KEY preview
+
+flutter build web --release
+vercel --prod
+```
+
+`build/web/config.json` is excluded by `.vercelignore`, so the deployed
 `/config.json` is the function rather than your local file. After changing the
 Vercel variable, redeploy for the new value to take effect.
-
-Connecting the GitHub repo directly to Vercel will not work out of the box
-because Vercel does not install Flutter. Use the local CLI deploy above, or add
-a CI workflow that installs Flutter before running `vercel deploy`.
 
 ## Project structure
 
 ```text
 api/
   config.js                  # Vercel function: key from env at /config.json
-vercel.json                  # static output + config.json rewrite
+scripts/
+  vercel-build.sh            # installs Flutter + builds web on Vercel
+vercel.json                  # build/output config + config.json rewrite
 lib/
   main.dart                  # providers, router, MaterialApp.router
   models/
