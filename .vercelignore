@@ -1,0 +1,9 @@
+# Local secrets: never upload the files that contain the real API key.
+config.json
+web/config.json
+build/web/config.json
+
+# Build caches / VCS metadata
+.vercel
+.dart_tool
+.git

@@ -106,9 +106,38 @@ For Option B, add `--dart-define-from-file=config.json` (or use the VS Code
 launch configuration). Other devices work too, e.g. `-d windows` or
 `-d <device-id>`; those builds use compile-time values.
 
+## Deploying to Vercel
+
+The key is never committed. On Vercel it comes from an environment variable and
+is served by a small function (`api/config.js`) at `/config.json`, so the static
+Flutter build contains no key.
+
+1. Install the CLI once:
+   ```bash
+   npm i -g vercel
+   ```
+2. In Vercel, open **Project → Settings → Environment Variables** and add
+   `TMDB_API_KEY` (or `TMDB_ACCESS_TOKEN`) for Production and Preview.
+3. From the project root:
+   ```bash
+   flutter build web --release
+   vercel --prod
+   ```
+
+`build/web/config.json` is ignored by `.vercelignore`, so the deployed
+`/config.json` is the function rather than your local file. After changing the
+Vercel variable, redeploy for the new value to take effect.
+
+Connecting the GitHub repo directly to Vercel will not work out of the box
+because Vercel does not install Flutter. Use the local CLI deploy above, or add
+a CI workflow that installs Flutter before running `vercel deploy`.
+
 ## Project structure
 
 ```text
+api/
+  config.js                  # Vercel function: key from env at /config.json
+vercel.json                  # static output + config.json rewrite
 lib/
   main.dart                  # providers, router, MaterialApp.router
   models/
@@ -150,9 +179,10 @@ lib/
 
 ## Limitations
 
-- The TMDB key is used client-side and is visible in the built app. With
-  Option A it is served publicly at `/config.json`. For a production app,
-  proxy requests through a backend so the key stays private.
+- The TMDB key is used client-side. On Vercel it is served at `/config.json`
+  from an environment variable, so it is not in Git or the static JS, but any
+  visitor can still read it in the browser. Hiding it completely requires
+  proxying all TMDB requests through a backend.
 - Favorites store a snapshot of movie data; changes made on TMDB are not synced.
 - No pagination or infinite scroll (not part of the project scope).
 

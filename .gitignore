@@ -52,3 +52,6 @@ app.*.map.json
 
 # Web runtime credentials (served at /config.json)
 web/config.json
+
+# Vercel CLI local project link
+.vercel/
